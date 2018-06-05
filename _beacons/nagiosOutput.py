@@ -21,6 +21,8 @@ log = logging.getLogger(__name__)
 __virtualname__ = 'nagiosOutput' # Beacon's in the pillar
 
 def __virtual__(): # 
+   if __grains__['kernel'] != 'Linux':
+     return False, 'This beacon only can be exucute in a linux-base system'
    return __virtualname__
    
 def validate(config): # Valid the beacon's syntax
@@ -82,4 +84,4 @@ def beacon(config):
         }
       if int(state) >= int(value['threshold']):
         ret.append(alertObject)   
-return ret
+    return ret
