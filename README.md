@@ -5,7 +5,7 @@ Customized beacon to execute nagios plugins in a salt-minion with multiple insta
 In order to make possible to use this beacon, the nagiosOutput.py should be placed in a "\__beacon_" named folder in one of our file_roots. More information of [file_roots](https://docs.saltstack.com/en/latest/topics/tutorials/states_pt4.html) and [custumized modules](https://docs.saltstack.com/en/latest/ref/modules/) in the [SaltStack documentation](https://docs.saltstack.com/en/latest/contents.html)
 
 Now we'll move on to an example:
-### schema in yaml code
+### Schema in yaml code
 ```
 beacons:
   nagiosOutput:
