@@ -5,20 +5,22 @@ Beacon to monitor multiple services with Nagios
 :depends: null
 '''
 
-# Python libs
+# Python libss
 from __future__ import absolute_import, unicode_literals
 import logging
 import re
 import subprocess 
 import time
 import math
+import os
+
 
 # Saltstack libs
 from salt.ext.six.moves import map
 
 log = logging.getLogger(__name__)
 
-__virtualname__ = 'nagiosOutput' # Beacon's in the pillar
+__virtualname__ = 'nagios_output' # Beacon's in the pillar
 
 def __virtual__(): # 
    if __grains__['kernel'] != 'Linux':
@@ -54,33 +56,45 @@ def beacon(config):
               - params: "Command's params"
               - threshold: From which type alerts the beacon will be executed (0 : All alerts, 1: All but "OK", 2: Only CRITICAL and UNKNOWN, 3: Only UNKNOWN )
               - interval: Execute Inverval 
- 
+
     '''
     _config = {}
     ret = []
     hashState = {0: "OK", 1: "WARNING", 2: "CRITICAL", 3: "UNKNOWN"} # Posible states
-    timeStamp = math.trunc(int(time.time()))  # timeStamp to compare the interval given
     list(map(_config.update, config))    
-    # Save all the needed information in the ret variable
+    # Save all the needed information in the ret variable  
     for key, value in _config.iteritems(): # for each instances
-      if timeStamp % int(value['interval']) != 0:
-        continue      
-      try:
-        subprocess.check_output(value['command'] + " " + value['params'], shell=True)
+      timeStamp = math.trunc(int(time.time()))
+      if os.path.isfile("/executionRutine/"+ key):
+        with open("/executionRutine/"+ key, "r") as outfile:
+          data = outfile.read()
+      else:
+        with open("/executionRutine/"+ key, "w+") as outfile:
+          outfile.write(str(timeStamp))
+        continue         
+      try:    
+        if timeStamp >= int(data) + int(value['interval']):
+          subprocess.check_output(value['command'] + " " + value['params'], shell=True)
+          with open("/executionRutine/"+ key, "w") as outfile:
+            outfile.write(str(timeStamp))
+        else:
+          continue
       except subprocess.CalledProcessError as e:
         state = e.returncode
         alertObject ={ 
           "instance": key,
           "output": e.output,
-          "state": hashState[state]
+          "state": hashState[state],
+          "timeStamp": value['interval']          
         }
       else:
         respond = subprocess.check_output(value['command'] + " " + value['params'], shell=True)
-        state = subprocess.check_output("echo $?", shell=True) 
+        state = subprocess.check_output('echo $?', shell=True)
         alertObject ={
           "instance": key,
           "output": respond,
-          "state": hashState[int(state)]
+          "state": hashState[0],
+          "timeStamp": timeStamp, 
         }
       if int(state) >= int(value['threshold']):
         ret.append(alertObject)   
