@@ -60,22 +60,25 @@ def beacon(config):
     '''
     _config = {}
     ret = []
+    path = "/var/log/salt/executionRutine"
     hashState = {0: "OK", 1: "WARNING", 2: "CRITICAL", 3: "UNKNOWN"} # Posible states
     list(map(_config.update, config))    
     # Save all the needed information in the ret variable  
+    if not os.path.exists(path):
+      os.makedirs(path)
     for key, value in _config.iteritems(): # for each instances
       timeStamp = math.trunc(int(time.time()))
-      if os.path.isfile("/executionRutine/"+ key):
-        with open("/executionRutine/"+ key, "r") as outfile:
+      if os.path.isfile(path + "/" + key):
+        with open(path + "/" + key, "r") as outfile:
           data = outfile.read()
       else:
-        with open("/executionRutine/"+ key, "w+") as outfile:
+        with open(path + "/" + key, "w+") as outfile:
           outfile.write(str(timeStamp))
         continue         
       try:    
         if timeStamp >= int(data) + int(value['interval']):
           subprocess.check_output(value['command'] + " " + value['params'], shell=True)
-          with open("/executionRutine/"+ key, "w") as outfile:
+          with open(path + "/" + key, "w") as outfile:
             outfile.write(str(timeStamp))
         else:
           continue
